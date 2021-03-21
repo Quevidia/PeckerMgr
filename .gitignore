@@ -1,0 +1,12 @@
+# Directories to not include.
+__pycache__/
+Archive/
+config/
+Executable/
+
+# Visual Studio directories to not include.
+.vs/
+.git/
+
+# Any additional files to not include.
+Build.bat

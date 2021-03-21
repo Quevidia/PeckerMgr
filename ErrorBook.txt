@@ -1,0 +1,14 @@
+Please check the syntax of the configuration file:
+ -BB: Crucial information in the configuration of a virtual machine has not been specified, or the syntax of a virtual machine's configuration file is malformed.
+ -CC: Either the configuration file for a specific virtual machine is missing, the syntax is malformed or a variable being looked for isn't existent.
+ -DD: Either the configuration file for a specific CPU architecture in the machines folder is missing or the syntax is malformed in said configuration file.
+ -E1: The syntax of the theme variable in the configuration file is malformed.
+ -E2: The syntax of the VMs location variable in the configuration file is malformed.
+ -E3: The syntax of the QEMU location variable in the configuration file is malformed.
+ -F1: Although the syntax itself is fine, there is a variable with commas when there shouldn't be any.
+ -FF: Upon appending to the configuration file, incorrect syntax has been discovered however the exact variable that is malformed cannnot be found.
+ -EE: A machine configuration file has malformed syntax or a crucial variable is not present.
+
+Application search error:
+ -E1: The machine folder is not present. This is crucial for storing information of each CPU architecture and the available resources of each machine.
+ -FF: Upon directory searching, PeckerMgr encountered a missing directory error. The directory that PeckerMgr was trying to search for will be listed for additional troubleshooting. If the directory missing is PeckerMgrLocation\Machines, refer to Application search error E1 for additional details.
