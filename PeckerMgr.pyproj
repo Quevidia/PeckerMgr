@@ -356,7 +356,9 @@
     <Folder Include="Miscellaneous\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include=".gitattributes" />
     <Content Include=".gitignore" />
+    <Content Include="ErrorBook.txt" />
     <Content Include="Icons\Architectures\Alpha.png" />
     <Content Include="Icons\Architectures\ARM32.png" />
     <Content Include="Icons\Architectures\ARM64.png" />
@@ -391,6 +393,7 @@
     <Content Include="Icons\PeckerMgr1.ico" />
     <Content Include="Icons\PeckerMgr1.png" />
     <Content Include="Icons\PeckerMgr1_64x64.png" />
+    <Content Include="LICENSE" />
     <Content Include="Machines\Alpha\Alpha DP264 Clipper\config.cfg" />
     <Content Include="Machines\Alpha\config.cfg" />
     <Content Include="Machines\Alpha\Empty machine\config.cfg" />
@@ -712,6 +715,7 @@
     <Content Include="Machines\XTensa\SIM Machine\config.cfg" />
     <Content Include="Machines\XTensa\Virt Machine\config.cfg" />
     <Content Include="PeckerMgr.png" />
+    <Content Include="README.md" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
