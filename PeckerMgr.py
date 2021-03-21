@@ -237,11 +237,9 @@ while True: # Just in case any changes to the application layout are being made.
         ["File", [
                     "New",
                     "Remove",
-                    "Launch",
-                    "---",
-                    "Configure",
-                    "Clone",
                     "Rename",
+                    "Configure",
+                    "Launch",
                     "---",
                     "Exit"
             ]
@@ -269,19 +267,18 @@ while True: # Just in case any changes to the application layout are being made.
         Assertion, ThingToAdd = ConfigurationManager.CheckForStatementInConfigurationFile("Arch=", os.path.normpath(VMsLocation.Get() + "/" + VMs + "\config.cfg"), False, False, True) # Get the name of the CPU arch.
         assert(Assertion), LaunchAspectsOfPeckerMgr.CreatePopup("Please check the syntax of the configuration file in the VM directory called " + VMs + ". CC", "Error", 4)
         PeckerMgrVMColumn.append(# Append the desired column.
-            [framework.Text(VMs, size = (54, 1), key = VMs, background_color = "#ebebeb", text_color = "#060e26", font = ("Segoe UI Light", 14), enable_events = True), framework.Image(background_color = "#ffffff", data = open(os.path.normpath(os.getcwd() + "/Icons/Architectures/" + ThingToAdd + ".png"), "rb").read())]
-        )
+            [framework.Text(VMs, size = (54, 1), key = VMs, background_color = "#ebebeb", text_color = "#060e26", font = ("Segoe UI Light", 14), enable_events = True), framework.Image(background_color = "#ffffff", data = open(os.path.normpath(os.getcwd() + "/Icons/Architectures/" + ThingToAdd + ".png"), "rb").read())])
 
     PeckerMgrLayouts = [
         [ # Create the layout for PeckerMgr itself.
             [framework.Text("Currently selected VM: none", font = ("Segoe UI Light", 14), key = "VMSelected", size = (50, 1), justification = "center")],
             [framework.Menu(PeckerMgrMenuLayout, background_color = "#f4f4f4", text_color = "#060e26", key = "VMsColumn")], # Create the sub-menu
             [framework.Column(PeckerMgrVMColumn, background_color = "#ffffff", size = (600, 300), scrollable = True, vertical_scroll_only = True, key = "VMListing")], # Create the VM listings.
-            [framework.Button("New", key = "New"), framework.Button("Remove", key = "Remove"), framework.Button("Rename", key = "Rename"), framework.Button("Configure", key = "Configure"), framework.Button("Clone", key = "Clone"), framework.Button("Launch", key = "Launch")] # Create the necessary buttons all in the same row.
+            [framework.Button("New", key = "New"), framework.Button("Remove", key = "Remove"), framework.Button("Rename", key = "Rename"), framework.Button("Configure", key = "Configure"), framework.Button("Launch", key = "Launch")] # Create the necessary buttons all in the same row.
         ]
     ]
 
-    PeckerMgr = framework.Window("PeckerMgr V1.12", PeckerMgrLayouts[0], element_justification = "center", debugger_enabled = False) # Finally, we can actually create the window itself!
+    PeckerMgr = framework.Window("PeckerMgr V1.10", PeckerMgrLayouts[0], element_justification = "center", debugger_enabled = False) # Finally, we can actually create the window itself!
 
     while True: # Create the application loop, since .read() only lasts once.
         Events, UserInput = PeckerMgr.read()
@@ -322,18 +319,18 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
 
             # Create the layout for the preferences window.
             PreferenceLayout = [
-                [framework.Text("Themes", font = ("Segoe UI Light", 20))], # Text informing the user about the themes they can choose.
-                [framework.Button("Light", key = "LightGrey6"), framework.Button("Navy", key = "BrownBlue"), framework.Button("Night", key = "DarkGrey2")], # All three available themes.
-                [framework.Text("Theme currently being used: " + GetThemeName(), key = "ThemeText")], # This displays information about the currently selected theme.
-                [framework.Text("Locate QEMU", font = ("Segoe UI Light", 20))], # Text informing the user to change the record of the location for QEMU in the configuration file.
-                [framework.Text("If the current location of QEMU is incorrect, you may change it here.")], # More information about QEMU locating.
-                [framework.Button("Change", key = "QEMUChange")], # Button for changing the location of QEMU.
-                [framework.Text("Locate your VMs folder", font = ("Segoe UI Light", 20))], # Text informing the user to change the record of the location for the VMsLocation folder in the configuration file.
-                [framework.Text("If the current location for your VMs folder is incorrect, you may change it here.")], # More information about VMsLocation locating.
-                [framework.Button("Change", key = "VMsChange")], # Button for changing the location of VMsLocation.
-                [framework.Text("To save all changes, click OK. Otherwise, click cancel.")], # Information about saving changes.
-                [framework.Button("OK"), framework.Button("Cancel")], # Create the buttons that carry out certain actions.]
-            ]
+                                    [framework.Text("Themes", font = ("Segoe UI Light", 20))], # Text informing the user about the themes they can choose.
+                                    [framework.Button("Light", key = "LightGrey6"), framework.Button("Navy", key = "BrownBlue"), framework.Button("Night", key = "DarkGrey2")], # All three available themes.
+                                    [framework.Text("Theme currently being used: " + GetThemeName(), key = "ThemeText")], # This displays information about the currently selected theme.
+                                    [framework.Text("Locate QEMU", font = ("Segoe UI Light", 20))], # Text informing the user to change the record of the location for QEMU in the configuration file.
+                                    [framework.Text("If the current location of QEMU is incorrect, you may change it here.")], # More information about QEMU locating.
+                                    [framework.Button("Change", key = "QEMUChange")], # Button for changing the location of QEMU.
+                                    [framework.Text("Locate your VMs folder", font = ("Segoe UI Light", 20))], # Text informing the user to change the record of the location for the VMsLocation folder in the configuration file.
+                                    [framework.Text("If the current location for your VMs folder is incorrect, you may change it here.")], # More information about VMsLocation locating.
+                                    [framework.Button("Change", key = "VMsChange")], # Button for changing the location of VMsLocation.
+                                    [framework.Text("To save all changes, click OK. Otherwise, click cancel.")], # Information about saving changes.
+                                    [framework.Button("OK"), framework.Button("Cancel")], # Create the buttons that carry out certain actions.]
+                               ]
 
              # Make the preferences window itself :^)
             Preferences = framework.Window("PeckerMgr Preferences", PreferenceLayout, element_justification = "center", debugger_enabled = False)
@@ -415,7 +412,9 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                 break # End the loop so PeckerMgr can be refreshed. This will also go through the virtual machines list check again, thus showing the new virtual machine.
         elif Events == "Remove": # If the remove button has been selected, this will open up the remove virtual machine wizard.
             PeckerMgr.hide()
-            if CurrentlySelectedVM == "none": LaunchAspectsOfPeckerMgr.TellUserToSelectVM() # Check if a virtual machine has not been selected.
+            if CurrentlySelectedVM == "none": # Check if a virtual machine has not been selected.
+                LaunchAspectsOfPeckerMgr.CreatePopup("Please select a virtual machine.", "Error", 1)
+                PeckerMgr.un_hide() # Show PeckerMgr again.
             else:
                 RemoveVMLayout = [
                     [framework.Text("Caution", font = ("Segoe UI Light", 16))], # Warning text
@@ -433,52 +432,11 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                     break # End the loop so a new instance of PeckerMgr opens up. This also refreshes the virtual machine listing, since the virtual machine folder is checked in the loop outside of the PeckerMgr loop.
                 else:
                     PeckerMgr.un_hide()
-        elif Events == "Clone":
-            PeckerMgr.hide()
-            if CurrentlySelectedVM == "none": LaunchAspectsOfPeckerMgr.TellUserToSelectVM() # Check if a virtual machine has not been selected.
-            else:
-                VMPath = os.path.normpath(VMsLocation.Get() + "/" + CurrentlySelectedVM) # Create a variable that will hold the location of the virtual machine being renamed.
-                CloneVMLayout = [ # Create the layout for this window!
-                    [framework.Text("Clone your virtual machine", font = ("Segoe UI Light", 16))], # Title of the wizard.
-                    [framework.Text("Please specify a name for your new cloned virtual machine.", justification = "center", size = (45, 2))], # Description of the wizard.
-                    [framework.Text("Virtual machine name:"), framework.Input(key = "VMName", background_color = "#ffffff", text_color = "#060e26")], # Allow the user to choose the virtual machine name.
-                    [framework.Button("OK", key = "OK"), framework.Button("Cancel", key = "Cancel")] # Final user input choices to make.
-                ]
-
-                CloneVMWindow = framework.Window("Clone virtual machine wizard", layout = CloneVMLayout, element_justification = "center", debugger_enabled = False) # Finally, create the window!
-                Events2 = None # Define Events2 outside of the while loop.
-                while True: # Create a loop, since user input may be registered more than once.
-                    Events2, UserInput2 = CloneVMWindow.read()
-                    if Events2 in ("Cancel", framework.WIN_CLOSED): # Check if the user cancelled this process.
-                        break
-                    elif Events2 == "OK": # Check if the user pressed OK.
-                        ContainsIllegalCharacters = False # Create a bool variable that will be used to check if the new virtual machine name contains illegal characters.
-                        for Char in UserInput2["VMName"]: # Go through all of the characters in UserInput2["VMName"].
-                            if Char in ("\\", "/", ":", "*", "?", '"', "<", ">", "|"): # Check if the character contains any illegal characters.
-                                ContainsIllegalCharacters = True # Set ContainsIllegalCharacters to True.
-                                break # End the foor loop.
-                        if ContainsIllegalCharacters: # Check if ContainsIllegalCharacters is True.
-                            LaunchAspectsOfPeckerMgr.CreatePopup("""Please refrain from using unwanted characters. This includes the following: \\, /, :, *, ?, ", ', <, > and |.""", "Error", 2)
-                        elif UserInput2["VMName"] == "": # Check if the user input is empty.
-                            LaunchAspectsOfPeckerMgr.CreatePopup("Please input something.", "Error", 1)
-                        elif os.path.isdir(UserInput2["VMName"]): # Check if the directory already exists.
-                            LaunchAspectsOfPeckerMgr.CreatePopup("This virtual machine already exists.", "Error", 1)
-                        elif not os.path.isdir(os.path.normpath(VMsLocation.Get() + "/" + CurrentlySelectedVM)): # Check if the directory has somehow been removed.
-                            LaunchAspectsOfPeckerMgr.CreatePopup("This virtual machine does not exist anymore.", "Error", 1)
-                        else:
-                            PopupToAppear = LaunchAspectsOfPeckerMgr.CreatePopup("Please wait while your virtual machine is copied over. This will take some time if your virtual machine contains large disk images inside it.", "Please wait...", 3, CreateButtons = False) # Create a popup without any buttons.
-                            shutil.copytree(VMPath, os.path.normpath(VMsLocation.Get() + "/" + UserInput2["VMName"]))
-                            PopupToAppear.close(); CloneVMWindow.hide() # Close PopupToAppear and hide CloneVMWindow.
-                            LaunchAspectsOfPeckerMgr.CreatePopup("Just a reminder that you may want to configure the new virtual machine, should you want to tweak a thing or two.", "Reminder", 2)
-                            break
-                CloneVMWindow.close() # Ensure that the window has closed.
-                if Events2 != "OK":
-                    PeckerMgr.un_hide()
-                else:
-                    break # End the loop so PeckerMgr can be properly refreshed.
         elif Events == "Rename": # If the rename button has been selected, this will open up the rename virtual machine wizard.
             PeckerMgr.hide()
-            if CurrentlySelectedVM == "none": LaunchAspectsOfPeckerMgr.TellUserToSelectVM() # Check if a virtual machine has not been selected.
+            if CurrentlySelectedVM == "none": # Check if a virtual machine has not been selected.
+                LaunchAspectsOfPeckerMgr.CreatePopup("Please select a virtual machine.", "Error", 1) # Tell the user to select a virtual machine.
+                PeckerMgr.un_hide() # Show PeckerMgr again.
             else:
                 VMPath = os.path.normpath(VMsLocation.Get() + "/" + CurrentlySelectedVM) # Create a variable that will hold the location of the virtual machine being renamed.
                 RenameVMLayout = [ # Create the layout for this window!
@@ -489,7 +447,7 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                 ]
 
                 RenameVMWindow = framework.Window("Rename virtual machine wizard", layout = RenameVMLayout, element_justification = "center", debugger_enabled = False) # Finally, create the window!
-                Events2 = None # Define Events2 outside of the while loop.
+                Events2 = None  # Define Events2 outside of the while loop.
                 while True: # Create a loop, since user input may be registered more than once.
                     Events2, UserInput2 = RenameVMWindow.read()
                     if Events2 in ("Cancel", framework.WIN_CLOSED): # Check if the user cancelled this process.
@@ -527,7 +485,8 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
             PeckerMgr.hide()
             VMPath = os.path.normpath(VMsLocation.Get() + "/" + CurrentlySelectedVM)
             VMConfigFile = VMPath + "\config.cfg"
-            if CurrentlySelectedVM == "none": LaunchAspectsOfPeckerMgr.TellUserToSelectVM() # Check if a virtual machine has not been selected.
+            if CurrentlySelectedVM == "none": # Check if a virtual machine has not been selected.
+                LaunchAspectsOfPeckerMgr.CreatePopup("Please select a virtual machine.", "Error", 1)
             elif not os.path.isdir(VMPath): # Check if the directory has somehow been deleted.
                 LaunchAspectsOfPeckerMgr.CreatePopup("The directory for this virtual machine no longer exists.", "Error", 2)
             elif not os.path.isfile(VMConfigFile): # Check if the configuration file does not exist.
@@ -566,7 +525,7 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                                 [framework.Text("Machine:      "), framework.Combo(AllHardwareAvailable[0], size = (75, 1), default_value = CurrentHardware[0], enable_events = True, key = "MachineName", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdown menu for the machine listing.
                                 [framework.Text("CPU:           "), framework.Combo(AllHardwareAvailable[1], size = (75, 1), default_value = CurrentHardware[1], enable_events = True, key = "CPU", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdown menu for the CPU listing.
                                 [framework.Text("Memory:      "), framework.Input(key = "Memory", enable_events = True, size = (77, 1), default_text = CurrentHardware[6], background_color = "#ffffff", text_color = "#060e26")], # Create an input box for memory allocation.
-                                [framework.Text("Storage allocation units can be either single-lettered (what QEMU uses) or what the true abbreviations are. All available storage allocation units (and their respective single-lettered variants): B, KB, MB, GB, TB, PB, EB.", size = (70, 4), justification = "center")], # Disclaimer about memory allocation.
+                                [framework.Text("Please ensure that the units are single-lettered only for memory allocations. Bytes, kilobytes, megabytes, gigabytes, terabytes, petabytes and exabytes should be shortened to B, K, M, G, T, P and E.", size = (70, 4), justification = "center")], # Disclaimer about memory allocation.
                                 [framework.Text("Acceleration:"), framework.Combo(AllHardwareAvailable[5], size = (75, 1), default_value = CurrentHardware[5], enable_events = True, key = "Accel", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdownm neu for QEMU acceleration options.
                                 [framework.Text("Acceleration consists of the usage of third-party software in order to boost the performance of virtual machines used with QEMU, whether it is taking advantage of virtualisation capabilities implemented on computer processors or if it is taking advantage of bare-metal hypervisor platforms installed on Windows.", size = (70, 4), justification = "center")], # Description about QEMU acceleration.
                 ]
@@ -658,7 +617,13 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                         else:
                             MemoryAllocation, BootOrderAllocation = True, True # This will signify if the memory allocation and the boot order is correct.
                             if len(UserInput2["Memory"]) > 0 and UserInput2["Memory"] != "Do not specify": # Check if the user has decided to allocate some memory for their machine.
-                                if LaunchAspectsOfPeckerMgr.CheckDiskSize(UserInput2["Memory"])[0] == "Error": MemoryAllocation = False # Check if the first entry of the returned value of LaunchAspectsOfPeckerMgr.CheckDiskSize() is "Error. If so, set MemoryAllocation to False.
+                                if not UserInput2["Memory"][-1] in ("B", "K", "M", "G", "T", "P", "E"): # Check if the memory allocation does not include a proper unit.
+                                    MemoryAllocation = False
+                                else:
+                                    try:
+                                        len(UserInput2["Memory"][0:-1]) # Try turning the memory imput into an integer, excluding the last character which should be the unit.
+                                    except ValueError: # If the memory input could not be turned into an integer, this exception will be raised.
+                                        MemoryAlocation = False
                             if len(UserInput2["BootOrder"]) > 0 and UserInput2["BootOrder"] != "Do not specify": # Check if the user has decided to specify a boot order.
                                 Specified = {"a" : False, "c" : False, "d" : False, "n" : False} # Specify all options and see if they have been specified already.
                                 for String in UserInput2["BootOrder"]: # Go through all of the specified options in the boot order.
@@ -689,7 +654,7 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                         MakeChange("fd" + Events2[-1] + "=None;")
                     elif Events2 == "CreateDisk": # Check if the user wants to create a new disk.
                         Configure.hide() # Hide the configuration wizard to prevent issues from arising.
-                        LaunchAspectsOfPeckerMgr.CreateDiskWizard(DefaultDiskLocation = VMPath) # Launch the create disk wizard.
+                        LaunchAspectsOfPeckerMgr.CreateDiskWizard() # Launch the create disk wizard.
                         Configure.un_hide() # Show the configuration window again.
                     elif Events2 == "HelpForAdvanced": # Check if the user would like help for the custom parameters option in the miscellaneous tab.
                         Configure.hide() # Hide the configuration wizard to prevent issues from arising.
@@ -711,16 +676,14 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
         elif Events == "Launch": # If the user has selected the Launch option, the following code will run.
             VMPath = os.path.normpath(VMsLocation.Get() + "/" + CurrentlySelectedVM)
             VMConfigFile = VMPath + "\config.cfg"
-            if CurrentlySelectedVM == "none": LaunchAspectsOfPeckerMgr.TellUserToSelectVM() # Check if a virtual machine has not been selected.
+            if CurrentlySelectedVM == "none": # Check if a virtual machine has not been selected.
+                LaunchAspectsOfPeckerMgr.CreatePopup("Please select a virtual machine.", "Error", 1)
             elif not os.path.isdir(VMPath): # Check if the directory has somehow been deleted.
-                PeckerMgr.hide() # Hide PeckerMgr.
                 LaunchAspectsOfPeckerMgr.CreatePopup("The directory for this virtual machine no longer exists.", "Error", 2)
             elif not os.path.isfile(VMConfigFile): # Check if the configuration file does not exist.
-                PeckerMgr.hide() # Hide PeckerMgr.
                 LaunchAspectsOfPeckerMgr.CreatePopup("Please check the syntax of the configuration file. CC", "Error", 2)
             else:
-                # Before the VM can be ran, let's create the batch file that will be ran whenever the user would like to launch the virtual machine.
-                PeckerMgr.un_hide() # Show PeckerMgr again.             
+                # Before the VM can be ran, let's create the batch file that will be ran whenever the user would like to launch the virtual machine.             
                 BatchScriptToRun = """@echo off
 echo This is your QEMU configuration: SCRIPTHERE
 echo.
@@ -733,7 +696,6 @@ pause""".replace("SCRIPTHERE", ConfigurationManager.OverrideEnclosedVariables(La
                 BatchFile = VMPath + "\VMLauncher.bat" # Create a variable for the exact batch file.
                 open(BatchFile, "w").write(BatchScriptToRun) # With our script ready, let's create (or modify) the batch file!
                 subprocess.Popen(BatchFile) # Finally, launch the batch file!
-            PeckerMgr.un_hide() # Show PeckerMgr again.
     PeckerMgr.close() # Close PeckerMgr if it hasn't been closed already.
     if Events in (framework.WIN_CLOSED, "Exit"): # If the user input for PeckerMgr was either closing the window or selecting the exit button, stop this entire loop.
         break
