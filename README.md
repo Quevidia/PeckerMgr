@@ -9,9 +9,9 @@ Everything related to how to use PeckerMgr will be mentioned in the tour process
 
 ## Branches
 
-master - Main branch containing the source code for recent stable releases of PeckerMgr
+<code>master</code> - Main branch containing the source code for recent stable releases of PeckerMgr
 
-developer - Developer branch containing the source code for recent developer releases of PeckerMgr
+<code>developer</code> - Developer branch containing the source code for recent developer releases of PeckerMgr
 
 ## Reminders
 
