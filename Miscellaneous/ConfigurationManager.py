@@ -1,3 +1,5 @@
+# WARNING: I don't know what I was thinking but the code below is slightly horrid lol, not terrible but not great either.
+
 # Import libraries necessary for this custom library that I have written.
 
 import PySimpleGUI as framework # The framework for all of the app development. This is essentially multiple libraries such as TKinter put all into one library, with more simplicity at the same time.
@@ -62,10 +64,15 @@ def OverrideValues(String, AdditionalValues = []):
         if not FoundOption: break # If FoundOption is False, end the continuously-going while loop. This will end the entire process of value detection.
     return String # Return the final string.
 
-def CheckForValidCharacter(String, SemiColonPlacement, Character = ";"):
+def CheckForValidCharacter(String, CharacterPlacement, Character = ";"):
     "Ensure that semi-colons can still be used without marking the end of a variable."
-    if String[SemiColonPlacement] != Character: return False # Check if the character of String at position SemiColonPlacement is a semi-colon.
-    if SemiColonPlacement != 0 and String[SemiColonPlacement - 1] == "\\": return False # Check if SemiColonPlacement is not 0 and the character of String at position SemiColonPlacement take away 1 is black slash.
+    if String[CharacterPlacement] != Character: return False # Check if the character of String at position SemiColonPlacement is a semi-colon.
+    CharacterCount = 0
+    while True:
+        CharacterPlacement -= 1
+        if CharacterPlacement == -1 or String[CharacterPlacement] != "\\": break 
+        CharacterCount += 1
+    if CharacterCount % 2 == 1: return False # Return false if the number of backslashes is odd.
     return True
 
 def AppendToConfigurationFile(AppendInfo, ConfigFileToUse):
