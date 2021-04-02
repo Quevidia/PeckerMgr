@@ -25,13 +25,30 @@ class CreateVariable:
     def Get(self):
         return self.Value
 
+# Set the default icon for all windows.
+assert(os.path.isfile(os.path.normpath(os.getcwd() + "/Icons/PeckerMgr1.ico"))), LaunchAspectsOfPeckerMgr.CreatePopup("PeckerMgr icon is not present. Please check your icons folder.", "Error", 2)
+framework.SetOptions(icon = os.path.normpath(os.getcwd() + "/Icons/PeckerMgr1.ico"))
+
 # Create a few introductary variables necessary for this application.
-Config = os.getcwd() + "\config" # Configuration directory
+Config = os.environ.get("LOCALAPPDATA") + "\PeckerMgr" # Configuration directory
 ConfigFile = Config + "\config.cfg" # Configuration file
 VMsLocation = CreateVariable("VMsLocation", "")
 QEMULocation = CreateVariable("QEMULocation", "")
 ThemeColour = "LightGrey6" # Default theme colour
 ConfigurationManager.DefaultEnclosedVariables.extend([["{CurrentWorkingDirectory}", os.path.normpath(os.path.normpath(os.getcwd()))], ["{VMsLocation}", QEMULocation.Get()], ["{QEMULocation}", VMsLocation.Get()]]) # Also modify the DefaultEnclosedVariables list.
+
+OldConfigFileLocation = os.getcwd() + "\config\config.cfg"
+if os.path.isfile(OldConfigFileLocation): # Check if the config directory and config.cfg is present in PeckerMgr's directory.
+    Events = LaunchAspectsOfPeckerMgr.CreatePopup("A configuration file has been found in the directory that PeckerMgr is located at. Would you like to move it over to your local appdata? Upon selecting yes, will both the configuration file and the configuration directory will be deleted.", "Reminder", 4, CustomLayout = [framework.Button("Yes", key = "Yes"), framework.Button("No")]) # Remind the user that there is a configuration file in the old PeckerMgr configuration location.
+    if Events == "Yes": # Check if the user selected yes.
+        if not os.path.isdir(Config): # Check if the necessary directory for the configuration file does not exist.
+            os.mkdir(Config) # Create the necessary directory located at Config.
+        Events2 = "" # Specify Events2 to be used in a few lines.
+        if os.path.isfile(ConfigFile): # Check if ConfigFile already exists.
+            Events2 = LaunchAspectsOfPeckerMgr.CreatePopup("A configuration file already exists in %LOCALAPPDATA%\PeckerMgr. Would you like to continue this operation?", "Warning", 3, CustomLayout = [framework.Button("Yes"), framework.Button("No", key = "No")])
+        if Events2 == "" or Events2 != "No": # Check if Events2 is an empty string or if it is no.
+            shutil.copyfile(OldConfigFileLocation, ConfigFile) # Copy over OldConfigFileLocation to ConfigFile.
+            shutil.rmtree(os.getcwd() + "\config") # Delete the config directory located in PeckerMgr's directory.
 
 # Create a few lists depicting pages for the CreateDocumentary method in LaunchAspectsOfPeckerMgr.
 TourInformation = [[ # Define a list that will contain the tour pages.
@@ -192,9 +209,9 @@ if ConfigurationManager.QuickCheck("VMsLocation=", ConfigFile) == -1: # If the c
             os.mkdir(os.getcwd() + "\VMsLocation")
         else:
             LaunchAspectsOfPeckerMgr.CreatePopup("It seems that the directory already exists.. Any chance that the configuration file might have been edited?", "Hmm...", 2)
-        ConfigurationManager.AppendToConfigurationFile("VMsLocation=" + os.path.normpath(os.getcwd()) + "\VMsLocation;", ConfigFile)
+        ConfigurationManager.AppendToConfigurationFile("VMsLocation=" + os.path.normpath(os.getcwd()).replace(";", "\;").replace(",", "\,") + "\VMsLocation", ConfigFile)
     elif FolderChosen != "":
-        ConfigurationManager.AppendToConfigurationFile("VMsLocation=" + FolderChosen + ";", ConfigFile)
+        ConfigurationManager.AppendToConfigurationFile("VMsLocation=" + FolderChosen.replace(";", "\;").replace(",", "\,"), ConfigFile)
 else:
     Assertion = ConfigurationManager.CheckForStatementInConfigurationFile("VMsLocation=", ConfigFile, False, True, True)
     assert(Assertion), LaunchAspectsOfPeckerMgr.CreatePopup("Please check the syntax of the configuration file. E2", "Error", 2)
@@ -212,19 +229,15 @@ if ConfigurationManager.QuickCheck("QEMU=", ConfigFile) == -1: # Check if QEMU= 
         ConfigurationManager.AppendToConfigurationFile("QEMU=C:\Program Files (x86)\QEMU;", ConfigFile)
     else:
         Events, UserInput = LaunchAspectsOfPeckerMgr.PromptUserToFindDirectory("It seems like that a recording of where QEMU is located at is not present in the configuration file, and it is also not located in your Program Files folder. Please browse for the directory that QEMU is located at.", True, 4)
-        ConfigurationManager.AppendToConfigurationFile("QEMU=" + os.path.normpath(UserInput["Browse"]) + ";", ConfigFile)
+        ConfigurationManager.AppendToConfigurationFile("QEMU=" + os.path.normpath(UserInput["Browse"]).replace(";", "\;").replace(",", "\,"), ConfigFile)
 else:
     Assertion, QEM = ConfigurationManager.CheckForStatementInConfigurationFile("QEMU=", ConfigFile, False, True, True)
     assert(Assertion), LaunchAspectsOfPeckerMgr.CreatePopup("Please check the syntax of the configuration file. E3", "Error", 2) # If Assertion is false (due to incorrect syntax or whatever) a popup will appear.
     if QEM == "" or not os.path.isdir(QEM): # Check if QEM is not a valid location.
         Events, UserInput = LaunchAspectsOfPeckerMgr.PromptUserToFindDirectory("Either the QEMU recording in the configuration file is empty or the directory does not exist. Please re-locate the QEMU folder.""", True, 2)
-        ConfigurationManager.AppendToConfigurationFile("QEMU=" + os.path.normpath(UserInput["Browse"]) + ";", ConfigFile)
+        ConfigurationManager.AppendToConfigurationFile("QEMU=" + os.path.normpath(UserInput["Browse"]).replace(";", "\;").replace(",", "\,"), ConfigFile)
 
 QEMULocation.Set(ConfigurationManager.CheckForStatementInConfigurationFile("QEMU=", ConfigFile, False, False, True)[1]) # Finally, set the QEMULocation variable!
-
-# Now, set the default icon for all windows and change a few other options.
-assert(os.path.isfile(os.path.normpath(os.getcwd() + "/Icons/PeckerMgr1.ico"))), LaunchAspectsOfPeckerMgr.CreatePopup("PeckerMgr icon is not present. Please check your icons folder.", "Error", 2)
-framework.SetOptions(icon = os.path.normpath(os.getcwd() + "/Icons/PeckerMgr1.ico"))
 
 # And finally, we can actually open PeckerMgr :^).
 # First however, we need to make the layouts for each window.
@@ -278,7 +291,7 @@ while True: # Just in case any changes to the application layout are being made.
         ]
     ]
 
-    PeckerMgr = framework.Window("PeckerMgr V1.10", PeckerMgrLayouts[0], element_justification = "center", debugger_enabled = False) # Finally, we can actually create the window itself!
+    PeckerMgr = framework.Window("PeckerMgr V1.12", PeckerMgrLayouts[0], element_justification = "center", debugger_enabled = False) # Finally, we can actually create the window itself!
 
     while True: # Create the application loop, since .read() only lasts once.
         Events, UserInput = PeckerMgr.read()
@@ -356,9 +369,9 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                     break # Stop the loop
             if Events2 == "OK":
                 framework.theme(CurrentlySelectedTheme) # Finally apply the changes to PeckerMgr!
-                ConfigurationManager.AppendToConfigurationFile("Theme=" + os.path.normpath(CurrentlySelectedTheme) + ";", ConfigFile) # Append the changes made to the configuration file.
-                ConfigurationManager.AppendToConfigurationFile("QEMU=" + os.path.normpath(NewQEMULocation) + ";", ConfigFile)
-                ConfigurationManager.AppendToConfigurationFile("VMsLocation=" + os.path.normpath(NewVMsLocation) + ";", ConfigFile)
+                ConfigurationManager.AppendToConfigurationFile("Theme=" + os.path.normpath(CurrentlySelectedTheme), ConfigFile) # Append the changes made to the configuration file.
+                ConfigurationManager.AppendToConfigurationFile("QEMU=" + os.path.normpath(NewQEMULocation).replace(";", "\;").replace(",", "\,"), ConfigFile)
+                ConfigurationManager.AppendToConfigurationFile("VMsLocation=" + os.path.normpath(NewVMsLocation).replace(";", "\;").replace(",", "\,"), ConfigFile)
                 QEMULocation.Set(NewQEMULocation)
                 VMsLocation.Set(NewVMsLocation)
                 Preferences.close() # Make sure that the preferences window actually closes.
@@ -525,55 +538,55 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                                 [framework.Text("Machine:      "), framework.Combo(AllHardwareAvailable[0], size = (75, 1), default_value = CurrentHardware[0], enable_events = True, key = "MachineName", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdown menu for the machine listing.
                                 [framework.Text("CPU:           "), framework.Combo(AllHardwareAvailable[1], size = (75, 1), default_value = CurrentHardware[1], enable_events = True, key = "CPU", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdown menu for the CPU listing.
                                 [framework.Text("Memory:      "), framework.Input(key = "Memory", enable_events = True, size = (77, 1), default_text = CurrentHardware[6], background_color = "#ffffff", text_color = "#060e26")], # Create an input box for memory allocation.
-                                [framework.Text("Please ensure that the units are single-lettered only for memory allocations. Bytes, kilobytes, megabytes, gigabytes, terabytes, petabytes and exabytes should be shortened to B, K, M, G, T, P and E.", size = (70, 4), justification = "center")], # Disclaimer about memory allocation.
+                                [framework.Text("Storage allocation units can be either single-lettered (what QEMU uses) or what the true abbreviations are. All available storage allocation units (and their respective single-lettered variants): B, KB, MB, GB, TB, PB, EB.", size = (70, 4), justification = "center")], # Disclaimer about memory allocation.
                                 [framework.Text("Acceleration:"), framework.Combo(AllHardwareAvailable[5], size = (75, 1), default_value = CurrentHardware[5], enable_events = True, key = "Accel", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdownm neu for QEMU acceleration options.
                                 [framework.Text("Acceleration consists of the usage of third-party software in order to boost the performance of virtual machines used with QEMU, whether it is taking advantage of virtualisation capabilities implemented on computer processors or if it is taking advantage of bare-metal hypervisor platforms installed on Windows.", size = (70, 4), justification = "center")], # Description about QEMU acceleration.
                 ]
                 PeripheralsTab = [ # Create the peripherals tab. This will allow the user to choose between a selection of additional cards for their system, whether it's a video card or a networking card and such.
-                                    [framework.Text("Video card:    "), framework.Combo(AllHardwareAvailable[2], size = (75, 1), default_value = CurrentHardware[2], enable_events = True, key = "Video", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdown menu for the video card listing.
-                                    [framework.Text("Sound card:   "), framework.Combo(AllHardwareAvailable[3], size = (75, 1), default_value = CurrentHardware[3], enable_events = True, key = "Sound", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdown menu for the sound card listing.
-                                    [framework.Text("Network card:"), framework.Combo(AllHardwareAvailable[4], size = (75, 1), default_value = CurrentHardware[4], enable_events = True, key = "Network", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdown menu for the network card listing.
-                                    [framework.Text("You won't have to configure any of these cards. Just simply choose a card of your choice and they'll work on the go. Of course, install the drivers for them inside the emulated operating system if necessary - otherwise you won't get the proper experience out of them. Of course, choose a card that perfectly fits the time era as well, otherwise you will not get them to work properly if the card you chose is too new or too old.", size = (70, 6), font = ("Segoe UI Light", 12), justification = "center")]
+                    [framework.Text("Video card:    "), framework.Combo(AllHardwareAvailable[2], size = (75, 1), default_value = CurrentHardware[2], enable_events = True, key = "Video", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdown menu for the video card listing.
+                    [framework.Text("Sound card:   "), framework.Combo(AllHardwareAvailable[3], size = (75, 1), default_value = CurrentHardware[3], enable_events = True, key = "Sound", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdown menu for the sound card listing.
+                    [framework.Text("Network card:"), framework.Combo(AllHardwareAvailable[4], size = (75, 1), default_value = CurrentHardware[4], enable_events = True, key = "Network", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdown menu for the network card listing.
+                    [framework.Text("You won't have to configure any of these cards. Just simply choose a card of your choice and they'll work on the go. Of course, install the drivers for them inside the emulated operating system if necessary - otherwise you won't get the proper experience out of them. Of course, choose a card that perfectly fits the time era as well, otherwise you will not get them to work properly if the card you chose is too new or too old.", size = (70, 6), font = ("Segoe UI Light", 12), justification = "center")]
                 ]
                 DrivesTab = [ # Create the drives tab. This will allow the user to choose what drive mediums they would like to specify.
-                               [framework.Button("Clear", key = "Clearhda"), framework.Text("Hard drive 1: " + CurrentHardware[7], key = "HD1", size = (65, 1))], # Description and a clear option for the first hard drive.
-                               [framework.FileBrowse(key = "hda", enable_events = True)], # Create a browse option for hard drive ide 0:0.
-                               [framework.Button("Clear", key = "Clearhdb"), framework.Text("Hard drive 2: " + CurrentHardware[8], key = "HD2", size = (65, 1))], # Description and a clear option for the second hard drive.
-                               [framework.FileBrowse(key = "hdb", enable_events = True)], # Create a browse option for hard drive ide 0:1.
-                               [framework.Button("Clear", key = "Clearhdc"), framework.Text("Hard drive 3: " + CurrentHardware[9], key = "HD3", size = (65, 1))], # Description and a clear option for the third hard drive.
-                               [framework.FileBrowse(key = "hdc", enable_events = True)], # Create a browse option for hard drive ide 1:0.
-                               [framework.Button("Clear", key = "Clearhdd"), framework.Text("Hard drive 4: " + CurrentHardware[10], key = "HD4", size = (65, 1))], # Description and a clear option for the fourth hard drive.
-                               [framework.FileBrowse(key = "hdd", enable_events = True)], # Create a browse option for hard drive ide 1:1.
-                               [framework.Button("Create virtual disk", key = "CreateDisk")] # Create an option that allows the user to create a new disk.
+                    [framework.Button("Clear", key = "Clearhda"), framework.Text("Hard drive 1: " + CurrentHardware[7], key = "HD1", size = (65, 1))], # Description and a clear option for the first hard drive.
+                    [framework.FileBrowse(key = "hda", enable_events = True)], # Create a browse option for hard drive ide 0:0.
+                    [framework.Button("Clear", key = "Clearhdb"), framework.Text("Hard drive 2: " + CurrentHardware[8], key = "HD2", size = (65, 1))], # Description and a clear option for the second hard drive.
+                    [framework.FileBrowse(key = "hdb", enable_events = True)], # Create a browse option for hard drive ide 0:1.
+                    [framework.Button("Clear", key = "Clearhdc"), framework.Text("Hard drive 3: " + CurrentHardware[9], key = "HD3", size = (65, 1))], # Description and a clear option for the third hard drive.
+                    [framework.FileBrowse(key = "hdc", enable_events = True)], # Create a browse option for hard drive ide 1:0.
+                    [framework.Button("Clear", key = "Clearhdd"), framework.Text("Hard drive 4: " + CurrentHardware[10], key = "HD4", size = (65, 1))], # Description and a clear option for the fourth hard drive.
+                    [framework.FileBrowse(key = "hdd", enable_events = True)], # Create a browse option for hard drive ide 1:1.
+                    [framework.Button("Create virtual disk", key = "CreateDisk")] # Create an option that allows the user to create a new disk.
                 ]
                 RemovableDrivesTab = [ # Create the removable drives tab. This will allow the user to choose what CDs/DVDs and floppies they would like to insert.
-                                        [framework.Button("Clear", key = "Clearodd"), framework.Text("Optical disc drive: " + CurrentHardware[11], key = "ODD", size = (65, 1))], # Description and a clear option for the optical disc drive.
-                                        [framework.FileBrowse(key = "odd", enable_events = True)], # Create a browse option for the optical disc drive ide 1:0.
-                                        [framework.Button("Clear", key = "Clearfda"), framework.Text("Floppy drive 1: " + CurrentHardware[12], key = "FD1", size = (65, 1))], # Description and a clear option for the first floppy drive.
-                                        [framework.FileBrowse(key = "fda", enable_events = True)], # Create a browse option for floppy drive A.
-                                        [framework.Button("Clear", key = "Clearfdb"), framework.Text("Floppy drive 2: " + CurrentHardware[13], key = "FD2", size = (65, 1))], # Description and a clear option for the second floppy drive.
-                                        [framework.FileBrowse(key = "fdb", enable_events = True)], # Create a browse option for floppy drive B.
-                                        [framework.Text("Disclaimer: Be aware that the third hard drive and the optical disc drive both share the same connection - IDE secondary master (IDE 1:0). If both drives are specified, a conflict will occur - thus QEMU will not launch.", justification = "center", size = (62, 3), font = ("Segoe UI light", 13))]
+                    [framework.Button("Clear", key = "Clearodd"), framework.Text("Optical disc drive: " + CurrentHardware[11], key = "ODD", size = (65, 1))], # Description and a clear option for the optical disc drive.
+                    [framework.FileBrowse(key = "odd", enable_events = True)], # Create a browse option for the optical disc drive ide 1:0.
+                    [framework.Button("Clear", key = "Clearfda"), framework.Text("Floppy drive 1: " + CurrentHardware[12], key = "FD1", size = (65, 1))], # Description and a clear option for the first floppy drive.
+                    [framework.FileBrowse(key = "fda", enable_events = True)], # Create a browse option for floppy drive A.
+                    [framework.Button("Clear", key = "Clearfdb"), framework.Text("Floppy drive 2: " + CurrentHardware[13], key = "FD2", size = (65, 1))], # Description and a clear option for the second floppy drive.
+                    [framework.FileBrowse(key = "fdb", enable_events = True)], # Create a browse option for floppy drive B.
+                    [framework.Text("Disclaimer: Be aware that the third hard drive and the optical disc drive both share the same connection - IDE secondary master (IDE 1:0). If both drives are specified, a conflict will occur - thus QEMU will not launch.", justification = "center", size = (62, 3), font = ("Segoe UI light", 13))]
                 ]
                 MiscellaneousTab = [ # Create a tab for any miscellaneous options, such as the display type.
-                                        [framework.Text("Boot order:"), framework.Input(key = "BootOrder", enable_events = True, default_text = CurrentHardware[14], size = (77, 1), background_color = "#ffffff", text_color = "#060e26")], # Create an input box for the boot order.
-                                        [framework.Text("Specify the boot order by using the following letters: A - floppy 1, C - hard drive 1, D - optical disc, N - network. This order is not case-sensitive.", size = (70, 2), justification = "center")], # Disclaimer about the boot order.
-                                        [framework.Text("Display type:"), framework.Combo(["Do not specify", "gtk", "sdl", "curses"], default_value = CurrentHardware[15], size = (77, 1), enable_events = True, key = "DisplayType", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdown menu for the display type.
-                                        [framework.Text("Change the interface for QEMU. GTK (the default user interface) will provoke QEMU to use a custom GNOME-like graphical user interface. SDL will provoke QEMU to use Windows' native titlebar. Curses will provoke QEMU to use a text-only user interface.", size = (70, 3), justification = "center")], # Disclaimer about the display type.
-                                        [framework.Text("Custom parameters:"), framework.Input(key = "Custom", enable_events = True, default_text = CurrentHardware[16], size = (77, 1), background_color = "#ffffff", text_color = "#060e26")], # Create an input box for any additional parameters.
-                                        [framework.Text("ONLY TOUCH THIS IF YOU KNOW WHAT YOU ARE DOING. Here, you can specify any additional parameters that you would like to use with this QEMU virtual machine.", size = (70, 3), justification = "center")], # Disclaimer about the custom parameters input box.
-                                        [framework.Button("Need help?", key = "HelpForAdvanced")] # Create a button that will open up a documentary window depicting about the custom parameters if clicked.
+                    [framework.Text("Boot order:"), framework.Input(key = "BootOrder", enable_events = True, default_text = CurrentHardware[14], size = (77, 1), background_color = "#ffffff", text_color = "#060e26")], # Create an input box for the boot order.
+                    [framework.Text("Specify the boot order by using the following letters: A - floppy 1, C - hard drive 1, D - optical disc, N - network. This order is not case-sensitive.", size = (70, 2), justification = "center")], # Disclaimer about the boot order.
+                    [framework.Text("Display type:"), framework.Combo(["Do not specify", "gtk", "sdl", "curses"], default_value = CurrentHardware[15], size = (77, 1), enable_events = True, key = "DisplayType", background_color = "#ffffff", text_color = "#060e26")], # Create a dropdown menu for the display type.
+                    [framework.Text("Change the interface for QEMU. GTK (the default user interface) will provoke QEMU to use a custom GNOME-like graphical user interface. SDL will provoke QEMU to use Windows' native titlebar. Curses will provoke QEMU to use a text-only user interface.", size = (70, 3), justification = "center")], # Disclaimer about the display type.
+                    [framework.Text("Custom parameters:"), framework.Input(key = "Custom", enable_events = True, default_text = CurrentHardware[16], size = (77, 1), background_color = "#ffffff", text_color = "#060e26")], # Create an input box for any additional parameters.
+                    [framework.Text("ONLY TOUCH THIS IF YOU KNOW WHAT YOU ARE DOING. Here, you can specify any additional parameters that you would like to use with this QEMU virtual machine.", size = (70, 3), justification = "center")], # Disclaimer about the custom parameters input box.
+                    [framework.Button("Need help?", key = "HelpForAdvanced")] # Create a button that will open up a documentary window depicting about the custom parameters if clicked.
                 ]
 
                 ConfigureLayout = [ # Create the layout for the window itself.
-                                    [framework.TabGroup([ # Create a tabgroup.
-                                                            [framework.Tab("Machine", MachineTab, element_justification = "center")], # Specify the machine tab.
-                                                            [framework.Tab("Peripherals", PeripheralsTab, element_justification = "center")], # Specify the peripherals tab.
-                                                            [framework.Tab("Non-removable mediums", DrivesTab, element_justification = "center")], # Specify the drives tab.
-                                                            [framework.Tab("Removable mediums", RemovableDrivesTab, element_justification = "center")], # Specify the removable drives tab.
-                                                            [framework.Tab("Miscellaneous", MiscellaneousTab, element_justification = "center")] # Specify the miscellaneous tab.
-                                    ])],
-                                    [framework.Button("OK", key = "OK"), framework.Button("Cancel", key = "Cancel")] # Create the buttons that the user can choose from when they're done.
+                    [framework.TabGroup([ # Create a tabgroup.
+                        [framework.Tab("Machine", MachineTab, element_justification = "center")], # Specify the machine tab.
+                        [framework.Tab("Peripherals", PeripheralsTab, element_justification = "center")], # Specify the peripherals tab.
+                        [framework.Tab("Non-removable mediums", DrivesTab, element_justification = "center")], # Specify the drives tab.
+                        [framework.Tab("Removable mediums", RemovableDrivesTab, element_justification = "center")], # Specify the removable drives tab.
+                        [framework.Tab("Miscellaneous", MiscellaneousTab, element_justification = "center")] # Specify the miscellaneous tab.
+                    ])],
+                    [framework.Button("OK", key = "OK"), framework.Button("Cancel", key = "Cancel")] # Create the buttons that the user can choose from when they're done.
                 ]
                 
                 # Now, create a few extra variables and functions for this.
@@ -606,7 +619,7 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                     if Events2 in ("Cancel", framework.WIN_CLOSED): # Check if the user has decided to close the window.
                         break # End the loop.
                     elif not Events2 in (framework.WIN_CLOSED, "OK", "Cancel", "Clearhda", "Clearhdb", "Clearhdc", "Clearhdd", "Clearodd", "Clearfda", "Clearfdb", "CreateDisk", "HelpForAdvanced"): # Check if the user has decided to make a change to the specification of any of their drives.
-                        DrivesSpecification, ExactChange = ("hda", "hdb", "hdc", "hdd", "odd", "fda", "fdb"), Events2 + "=" + UserInput2[Events2].replace("Do not specify", "None") + ";" # Create a variable for each drive specification and the exact change to append.
+                        DrivesSpecification, ExactChange = ("hda", "hdb", "hdc", "hdd", "odd", "fda", "fdb"), Events2 + "=" + UserInput2[Events2].replace("Do not specify", "None") # Create a variable for each drive specification and the exact change to append.
                         if Events2 in DrivesSpecification and not UserInput2[Events2] == "": # Check if the events was modifying any of the drive specifications and the user input is not empty.
                             MakeChange(ConfigurationManager.OverrideValues(os.path.normpath(ExactChange), AdditionalValues = [["{VMPath}", VMPath]])) # Add the change to the ChangesMade list.
                         elif not Events2 in DrivesSpecification: # Check if the current event is not related to the specification of any of their drives.
@@ -644,14 +657,14 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                     elif Events2 in ("Clearhda", "Clearhdb", "Clearhdc", "Clearhdd"): # Check if the user wants to clear any of the four hard drive specifications.
                         LetterToNumber = {"a" : 1, "b" : 2, "c" : 3, "d" : 4} # Specify the number variants of the letters.
                         Configure["HD" + str(LetterToNumber[Events2[-1]])].update("Hard drive " + str(LetterToNumber[Events2[-1]]) + ": Do not specify")
-                        MakeChange("hd" + Events2[-1] + "=None;")
+                        MakeChange("hd" + Events2[-1] + "=None")
                     elif Events2 == "Clearodd": # Check if the user wants to clear the optical disc drive specification.
                         Configure["ODD"].update("Optical disc drive: Do not specify")
-                        MakeChange("odd=None;")
+                        MakeChange("odd=None")
                     elif Events2 in ("Clearfda", "Clearfdb"): # Check if the user wants to clear any of the two floppy drive specifications.
                         LetterToNumber = {"a" : 1, "b" : 2, "c" : 3, "d" : 4} # Specify the number variants of the letters.
                         Configure["FD" + str(LetterToNumber[Events2[-1]])].update("Floppy drive " + str(LetterToNumber[Events2[-1]]) + ": Do not specify")
-                        MakeChange("fd" + Events2[-1] + "=None;")
+                        MakeChange("fd" + Events2[-1] + "=None")
                     elif Events2 == "CreateDisk": # Check if the user wants to create a new disk.
                         Configure.hide() # Hide the configuration wizard to prevent issues from arising.
                         LaunchAspectsOfPeckerMgr.CreateDiskWizard() # Launch the create disk wizard.
