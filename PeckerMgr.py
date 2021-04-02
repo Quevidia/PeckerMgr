@@ -634,7 +634,6 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                 ChangesMade = [] # All changes to be made will be added to this list, and then will be applied to the virtual machine configuration file if the user selected "OK".
                 def MakeChange(ChangeToAdd): # This will just make appending to the ChangesMade list a bit more simplistic.
                     Found = False # Check if the change already exists in the ChangesMade list.
-                    ChangeToAdd = ChangeToAdd.replace(";", "\;").replace(",", "\,") # Replace semi-colons (and commmas) to contain back-slashes to ensure that they do not get marked as something else in ConfigurationManager.
                     def GetVariable(String): # Create a sub-function for getting the variable from a string.
                         VariableToUse = ""
                         for Char in String: # Skim through the ChangeToAdd string so we can get the exact variable.
