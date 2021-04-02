@@ -62,11 +62,19 @@ def OverrideValues(String, AdditionalValues = []):
         if not FoundOption: break # If FoundOption is False, end the continuously-going while loop. This will end the entire process of value detection.
     return String # Return the final string.
 
+def CheckForValidCharacter(String, SemiColonPlacement, Character = ";"):
+    "Ensure that semi-colons can still be used without marking the end of a variable."
+    if String[SemiColonPlacement] != Character: return False # Check if the character of String at position SemiColonPlacement is a semi-colon.
+    if SemiColonPlacement != 0 and String[SemiColonPlacement - 1] == "\\": return False # Check if SemiColonPlacement is not 0 and the character of String at position SemiColonPlacement take away 1 is black slash.
+    return True
+
 def AppendToConfigurationFile(AppendInfo, ConfigFileToUse):
     """Append information to a configuration file.
     The first variable for this function depicts the information you'd like to append to a configuration file.
     The second variable is the exact configuration file to use. PLEASE ENSURE THAT THE CONFIGRATION FILE YOU'RE LOOKING FOR DOES EXIST!
     This function will handle all of the changes depending on what is already there on the configuration file."""
+    AppendInfo = AppendInfo.rstrip() # Trim off all of the whitespaces at the end of AppendInfo.
+    if not CheckForValidCharacter(AppendInfo, len(AppendInfo) - 1): AppendInfo += ";" # If the final character of AppendInfo is not a semi-colon, add a semi-colon onto it.
     CurrentConfig = open(ConfigFileToUse).read()
     if AppendInfo != "":
         AppendInfo = AppendInfo.replace(__main__.os.path.normpath(__main__.os.getcwd()), __main__.os.path.normpath("{CurrentWorkingDirectory}/")) # Replace a few bits of information in the AppendInfo variable with safer-to-use variants.
@@ -83,14 +91,18 @@ def AppendToConfigurationFile(AppendInfo, ConfigFileToUse):
         HasDoneFine = False
         for i in range(integer + len(Variable), len(CurrentConfig)):
             ValueOfVariable = ValueOfVariable + CurrentConfig[i]
-            if CurrentConfig[i] == ";": # This defines the end of the configuration variable, much like if you were coding where the semicolon would define the end of a statement.
+            if CheckForValidCharacter(CurrentConfig, i): # This defines the end of the configuration variable, much like if you were coding where the semicolon would define the end of a statement.
                 SyntaxCorrect = True
                 HasDoneFine = True
                 break
         assert(HasDoneFine), LaunchAspectsOfPeckerMgr.CreatePopup("Please check the syntax of the configuration file. FF", "Error", 2) # If HasDoneFine is still False, then there will be an assertion.
         Variable = Variable + ValueOfVariable
         open(ConfigFileToUse, "w").write(CurrentConfig.replace(Variable, AppendInfo))
-        return OverrideEnclosedVariables(ValueOfVariable.replace(";", "")) # If one was to require the value for variable assigning without having to use the CheckForStatementInConfigurationFile function.
+        NewValueOfVariable = ""
+        for Char in range(len(ValueOfVariable)):
+            if not CheckForValidCharacter(ValueOfVariable, Char):
+                NewValueOfVariable += ValueOfVariable[Char]
+        return OverrideEnclosedVariables(NewValueOfVariable) # If one was to require the value for variable assigning without having to use the CheckForStatementInConfigurationFile function.
     elif CurrentConfig.find(AppendInfo, 0, len(CurrentConfig)) == -1:
         if CurrentConfig == "":
             open(ConfigFileToUse, "w").write(AppendInfo)
@@ -107,6 +119,8 @@ def CheckForStatementInConfigurationFile(WhatToSearchFor, ConfigFileToUse, Allow
     If the third variable is set to "Ignore" then all commas will just be left alone.
     The forth variable is to depict whether there will be an exception for no result in the configuration file.
     The fifth variable will depict whether all enclosed variables should be overrided to represent their true values."""
+    WhatToSearchFor = WhatToSearchFor.rstrip() # Trim off all of the whitespaces at the end of WhatToSearchFor.
+    if WhatToSearchFor[len(WhatToSearchFor) - 1] != "=": WhatToSearchFor += "="  # If the final character of WhatToSearchFor is not an equal sign, add an equal sign onto it.
     SyntaxCorrect = AllowNothingFound
     if AllowCommas == True:
         WordBeingFound = []
@@ -119,13 +133,14 @@ def CheckForStatementInConfigurationFile(WhatToSearchFor, ConfigFileToUse, Allow
         if integer != -1: # -1 = not present, any other integer = present
             SyntaxCorrect = False
             for i in range(integer + len(WhatToSearchFor), len(ConfigText)):
-                if ConfigText[i] == ";": # This defines the end of the configuration variable, much like if you were coding where the semicolon would define the end of a statement.
+                if CheckForValidCharacter(ConfigText, i): # This defines the end of the configuration variable, much like if you were coding where the semicolon would define the end of a statement.
                     SyntaxCorrect = True
                     break
-                elif ConfigText[i] == ",":
+                elif CheckForValidCharacter(ConfigText, i, Character = ","):
                     assert(AllowCommas), LaunchAspectsOfPeckerMgr.CreatePopup("Please check the syntax of the configuration file. F1", "Error", 2) # If allowcommas is false and there has been a comma detected, this will initiate an assert.
                     if AllowCommas == True:
                         if ReturnTrueValue: WordBeingFound[Pointer] = OverrideEnclosedVariables(WordBeingFound[Pointer]) # Replace a few bits of information with their true values.
+                        WordBeingFound[Pointer] = WordBeingFound[Pointer].replace("\;", ";").replace("\,", ",")
                         Pointer = Pointer + 1
                     elif AllowCommas == "Ignore":
                         WordBeingFound = WordBeingFound + ConfigText[i]
@@ -136,6 +151,8 @@ def CheckForStatementInConfigurationFile(WhatToSearchFor, ConfigFileToUse, Allow
                         WordBeingFound.append(ConfigText[i])
                 else:
                     WordBeingFound = WordBeingFound + ConfigText[i]
+            if type(WordBeingFound) == str:
+                WordBeingFound = WordBeingFound.replace("\;", ";").replace("\,", ",")
     if AllowCommas != True and ReturnTrueValue: WordBeingFound = OverrideEnclosedVariables(WordBeingFound) # Replace a few bits of information with their true values.
     return SyntaxCorrect, WordBeingFound # Finally, return the final information!
 

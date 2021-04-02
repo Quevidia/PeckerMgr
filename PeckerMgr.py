@@ -25,13 +25,30 @@ class CreateVariable:
     def Get(self):
         return self.Value
 
+# Set the default icon for all windows.
+assert(os.path.isfile(os.path.normpath(os.getcwd() + "/Icons/PeckerMgr1.ico"))), LaunchAspectsOfPeckerMgr.CreatePopup("PeckerMgr icon is not present. Please check your icons folder.", "Error", 2)
+framework.SetOptions(icon = os.path.normpath(os.getcwd() + "/Icons/PeckerMgr1.ico"))
+
 # Create a few introductary variables necessary for this application.
-Config = os.getcwd() + "\config" # Configuration directory
+Config = os.environ.get("LOCALAPPDATA") + "\PeckerMgr" # Configuration directory
 ConfigFile = Config + "\config.cfg" # Configuration file
 VMsLocation = CreateVariable("VMsLocation", "")
 QEMULocation = CreateVariable("QEMULocation", "")
 ThemeColour = "LightGrey6" # Default theme colour
 ConfigurationManager.DefaultEnclosedVariables.extend([["{CurrentWorkingDirectory}", os.path.normpath(os.path.normpath(os.getcwd()))], ["{VMsLocation}", QEMULocation.Get()], ["{QEMULocation}", VMsLocation.Get()]]) # Also modify the DefaultEnclosedVariables list.
+
+OldConfigFileLocation = os.getcwd() + "\config\config.cfg"
+if os.path.isfile(OldConfigFileLocation): # Check if the config directory and config.cfg is present in PeckerMgr's directory.
+    Events = LaunchAspectsOfPeckerMgr.CreatePopup("A configuration file has been found in the directory that PeckerMgr is located at. Would you like to move it over to your local appdata? Upon selecting yes, will both the configuration file and the configuration directory will be deleted.", "Reminder", 4, CustomLayout = [framework.Button("Yes", key = "Yes"), framework.Button("No")]) # Remind the user that there is a configuration file in the old PeckerMgr configuration location.
+    if Events == "Yes": # Check if the user selected yes.
+        if not os.path.isdir(Config): # Check if the necessary directory for the configuration file does not exist.
+            os.mkdir(Config) # Create the necessary directory located at Config.
+        Events2 = "" # Specify Events2 to be used in a few lines.
+        if os.path.isfile(ConfigFile): # Check if ConfigFile already exists.
+            Events2 = LaunchAspectsOfPeckerMgr.CreatePopup("A configuration file already exists in %LOCALAPPDATA%\PeckerMgr. Would you like to continue this operation?", "Warning", 3, CustomLayout = [framework.Button("Yes"), framework.Button("No", key = "No")])
+        if Events2 == "" or Events2 != "No": # Check if Events2 is an empty string or if it is no.
+            shutil.copyfile(OldConfigFileLocation, ConfigFile) # Copy over OldConfigFileLocation to ConfigFile.
+            shutil.rmtree(os.getcwd() + "\config") # Delete the config directory located in PeckerMgr's directory.
 
 # Create a few lists depicting pages for the CreateDocumentary method in LaunchAspectsOfPeckerMgr.
 TourInformation = [[ # Define a list that will contain the tour pages.
@@ -192,9 +209,9 @@ if ConfigurationManager.QuickCheck("VMsLocation=", ConfigFile) == -1: # If the c
             os.mkdir(os.getcwd() + "\VMsLocation")
         else:
             LaunchAspectsOfPeckerMgr.CreatePopup("It seems that the directory already exists.. Any chance that the configuration file might have been edited?", "Hmm...", 2)
-        ConfigurationManager.AppendToConfigurationFile("VMsLocation=" + os.path.normpath(os.getcwd()) + "\VMsLocation;", ConfigFile)
+        ConfigurationManager.AppendToConfigurationFile("VMsLocation=" + os.path.normpath(os.getcwd()).replace(";", "\;").replace(",", "\,") + "\VMsLocation", ConfigFile)
     elif FolderChosen != "":
-        ConfigurationManager.AppendToConfigurationFile("VMsLocation=" + FolderChosen + ";", ConfigFile)
+        ConfigurationManager.AppendToConfigurationFile("VMsLocation=" + FolderChosen.replace(";", "\;").replace(",", "\,"), ConfigFile)
 else:
     Assertion = ConfigurationManager.CheckForStatementInConfigurationFile("VMsLocation=", ConfigFile, False, True, True)
     assert(Assertion), LaunchAspectsOfPeckerMgr.CreatePopup("Please check the syntax of the configuration file. E2", "Error", 2)
@@ -212,19 +229,15 @@ if ConfigurationManager.QuickCheck("QEMU=", ConfigFile) == -1: # Check if QEMU= 
         ConfigurationManager.AppendToConfigurationFile("QEMU=C:\Program Files (x86)\QEMU;", ConfigFile)
     else:
         Events, UserInput = LaunchAspectsOfPeckerMgr.PromptUserToFindDirectory("It seems like that a recording of where QEMU is located at is not present in the configuration file, and it is also not located in your Program Files folder. Please browse for the directory that QEMU is located at.", True, 4)
-        ConfigurationManager.AppendToConfigurationFile("QEMU=" + os.path.normpath(UserInput["Browse"]) + ";", ConfigFile)
+        ConfigurationManager.AppendToConfigurationFile("QEMU=" + os.path.normpath(UserInput["Browse"]).replace(";", "\;").replace(",", "\,"), ConfigFile)
 else:
     Assertion, QEM = ConfigurationManager.CheckForStatementInConfigurationFile("QEMU=", ConfigFile, False, True, True)
     assert(Assertion), LaunchAspectsOfPeckerMgr.CreatePopup("Please check the syntax of the configuration file. E3", "Error", 2) # If Assertion is false (due to incorrect syntax or whatever) a popup will appear.
     if QEM == "" or not os.path.isdir(QEM): # Check if QEM is not a valid location.
         Events, UserInput = LaunchAspectsOfPeckerMgr.PromptUserToFindDirectory("Either the QEMU recording in the configuration file is empty or the directory does not exist. Please re-locate the QEMU folder.""", True, 2)
-        ConfigurationManager.AppendToConfigurationFile("QEMU=" + os.path.normpath(UserInput["Browse"]) + ";", ConfigFile)
+        ConfigurationManager.AppendToConfigurationFile("QEMU=" + os.path.normpath(UserInput["Browse"]).replace(";", "\;").replace(",", "\,"), ConfigFile)
 
 QEMULocation.Set(ConfigurationManager.CheckForStatementInConfigurationFile("QEMU=", ConfigFile, False, False, True)[1]) # Finally, set the QEMULocation variable!
-
-# Now, set the default icon for all windows and change a few other options.
-assert(os.path.isfile(os.path.normpath(os.getcwd() + "/Icons/PeckerMgr1.ico"))), LaunchAspectsOfPeckerMgr.CreatePopup("PeckerMgr icon is not present. Please check your icons folder.", "Error", 2)
-framework.SetOptions(icon = os.path.normpath(os.getcwd() + "/Icons/PeckerMgr1.ico"))
 
 # And finally, we can actually open PeckerMgr :^).
 # First however, we need to make the layouts for each window.
@@ -281,7 +294,7 @@ while True: # Just in case any changes to the application layout are being made.
         ]
     ]
 
-    PeckerMgr = framework.Window("PeckerMgr V1.12", PeckerMgrLayouts[0], element_justification = "center", debugger_enabled = False) # Finally, we can actually create the window itself!
+    PeckerMgr = framework.Window("PeckerMgr V1.20", PeckerMgrLayouts[0], element_justification = "center", debugger_enabled = False) # Finally, we can actually create the window itself!
 
     while True: # Create the application loop, since .read() only lasts once.
         Events, UserInput = PeckerMgr.read()
@@ -359,9 +372,9 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                     break # Stop the loop
             if Events2 == "OK":
                 framework.theme(CurrentlySelectedTheme) # Finally apply the changes to PeckerMgr!
-                ConfigurationManager.AppendToConfigurationFile("Theme=" + os.path.normpath(CurrentlySelectedTheme) + ";", ConfigFile) # Append the changes made to the configuration file.
-                ConfigurationManager.AppendToConfigurationFile("QEMU=" + os.path.normpath(NewQEMULocation) + ";", ConfigFile)
-                ConfigurationManager.AppendToConfigurationFile("VMsLocation=" + os.path.normpath(NewVMsLocation) + ";", ConfigFile)
+                ConfigurationManager.AppendToConfigurationFile("Theme=" + os.path.normpath(CurrentlySelectedTheme), ConfigFile) # Append the changes made to the configuration file.
+                ConfigurationManager.AppendToConfigurationFile("QEMU=" + os.path.normpath(NewQEMULocation).replace(";", "\;").replace(",", "\,"), ConfigFile)
+                ConfigurationManager.AppendToConfigurationFile("VMsLocation=" + os.path.normpath(NewVMsLocation).replace(";", "\;").replace(",", "\,"), ConfigFile)
                 QEMULocation.Set(NewQEMULocation)
                 VMsLocation.Set(NewVMsLocation)
                 Preferences.close() # Make sure that the preferences window actually closes.
@@ -621,6 +634,8 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                 ChangesMade = [] # All changes to be made will be added to this list, and then will be applied to the virtual machine configuration file if the user selected "OK".
                 def MakeChange(ChangeToAdd): # This will just make appending to the ChangesMade list a bit more simplistic.
                     Found = False # Check if the change already exists in the ChangesMade list.
+                    ChangeToAdd = ChangeToAdd.replace(";", "\;").replace(",", "\,") # Replace semi-colons (and commmas) to contain back-slashes to ensure that they do not get marked as something else in ConfigurationManager.
+                    print(ChangeToAdd)
                     def GetVariable(String): # Create a sub-function for getting the variable from a string.
                         VariableToUse = ""
                         for Char in String: # Skim through the ChangeToAdd string so we can get the exact variable.
@@ -647,7 +662,7 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                     if Events2 in ("Cancel", framework.WIN_CLOSED): # Check if the user has decided to close the window.
                         break # End the loop.
                     elif not Events2 in (framework.WIN_CLOSED, "OK", "Cancel", "Clearhda", "Clearhdb", "Clearhdc", "Clearhdd", "Clearodd", "Clearfda", "Clearfdb", "CreateDisk", "HelpForAdvanced"): # Check if the user has decided to make a change to the specification of any of their drives.
-                        DrivesSpecification, ExactChange = ("hda", "hdb", "hdc", "hdd", "odd", "fda", "fdb"), Events2 + "=" + UserInput2[Events2].replace("Do not specify", "None") + ";" # Create a variable for each drive specification and the exact change to append.
+                        DrivesSpecification, ExactChange = ("hda", "hdb", "hdc", "hdd", "odd", "fda", "fdb"), Events2 + "=" + UserInput2[Events2].replace("Do not specify", "None") # Create a variable for each drive specification and the exact change to append.
                         if Events2 in DrivesSpecification and not UserInput2[Events2] == "": # Check if the events was modifying any of the drive specifications and the user input is not empty.
                             MakeChange(ConfigurationManager.OverrideValues(os.path.normpath(ExactChange), AdditionalValues = [["{VMPath}", VMPath]])) # Add the change to the ChangesMade list.
                         elif not Events2 in DrivesSpecification: # Check if the current event is not related to the specification of any of their drives.
@@ -679,14 +694,14 @@ Made by Quevidia!""", justification = "center", size = (45, 4))],
                     elif Events2 in ("Clearhda", "Clearhdb", "Clearhdc", "Clearhdd"): # Check if the user wants to clear any of the four hard drive specifications.
                         LetterToNumber = {"a" : 1, "b" : 2, "c" : 3, "d" : 4} # Specify the number variants of the letters.
                         Configure["HD" + str(LetterToNumber[Events2[-1]])].update("Hard drive " + str(LetterToNumber[Events2[-1]]) + ": Do not specify")
-                        MakeChange("hd" + Events2[-1] + "=None;")
+                        MakeChange("hd" + Events2[-1] + "=None")
                     elif Events2 == "Clearodd": # Check if the user wants to clear the optical disc drive specification.
                         Configure["ODD"].update("Optical disc drive: Do not specify")
-                        MakeChange("odd=None;")
+                        MakeChange("odd=None")
                     elif Events2 in ("Clearfda", "Clearfdb"): # Check if the user wants to clear any of the two floppy drive specifications.
                         LetterToNumber = {"a" : 1, "b" : 2, "c" : 3, "d" : 4} # Specify the number variants of the letters.
                         Configure["FD" + str(LetterToNumber[Events2[-1]])].update("Floppy drive " + str(LetterToNumber[Events2[-1]]) + ": Do not specify")
-                        MakeChange("fd" + Events2[-1] + "=None;")
+                        MakeChange("fd" + Events2[-1] + "=None")
                     elif Events2 == "CreateDisk": # Check if the user wants to create a new disk.
                         Configure.hide() # Hide the configuration wizard to prevent issues from arising.
                         LaunchAspectsOfPeckerMgr.CreateDiskWizard(DefaultDiskLocation = VMPath) # Launch the create disk wizard.
