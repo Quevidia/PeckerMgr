@@ -5,6 +5,9 @@ import PySimpleGUI as framework # Load in the PySimpleGUI library. This is alrea
 
 # The reason why I'm importing the entirety of PeckerMgr, rather than just using "from __main__ import *" is because the variables won't be updated if they are on the main script. With the whole script importing, that won't be so much of an issue.
 
+# Specify base values that may be used across multiple methods.
+AllByteAllocations = ("KB", "MB", "GB", "TB", "PB", "EB") # Specify storage allocation units.
+
 def CreateDocumentary(Pages, Title, TextHeight):
     """Create a documentary window which can consist of multiple pages.
     The first argument will be a list of strings which will be used as each page.
@@ -35,19 +38,24 @@ def CreateDocumentary(Pages, Title, TextHeight):
     if Title == "Tour": __main__.ConfigurationManager.AppendToConfigurationFile("TourDone=True;", __main__.ConfigFile) # Write to the configuration file that the tour has completed, if the title is Tour.
     DocumentaryWindow.close() # Close the window if it hasn't been closed already.
 
-def CreatePopup(Text, Title, TextHeight, CustomLayout = []):
+def CreatePopup(Text, Title, TextHeight, CustomLayout = [], CreateButtons = True):
     """Create a popup. This function has been made to maintain consistency while simplifying usage.
     The first variable will be the text that the popup will display.
     The second variable will be the title of the popup.
-    The third variable will define the text element's height."""
+    The third variable will define the text element's height.
+    The other variables are optional and simply define additional aspects of the popup."""
     PopupLayout = [ # Create the popup layout!
                     [framework.Text(Text, justification = "center", size = (45, TextHeight))], # Create the text element. This will display the text that the user would like to display.
                     [framework.Button("OK", key = "OK")] # Create a placebo button element displaying "OK".
     ]
-    if CustomLayout != []: # Check if CustomLayout is not an empty list.
-        PopupLayout[1] = CustomLayout # Swap out PopupLayout[2] for the custom layout.
-    Popup = framework.Window(Title, layout = PopupLayout, element_justification = "center", debugger_enabled = False) # Create the final window with the popup layout!
-    Events, UserInput = Popup.read(close = True) # Read the window, and then close it.
+    if CreateButtons: # Check if CreateButtons is true.
+        if CustomLayout != []: # Check if CustomLayout is not an empty list.
+            PopupLayout[1] = CustomLayout # Swap out PopupLayout[2] for the custom layout.
+        Popup = framework.Window(Title, layout = PopupLayout, element_justification = "center", debugger_enabled = False) # Create the final window with the popup layout!
+        Events, UserInput = Popup.read(close = True) # Read the window, and then close it.
+    else:
+        PopupLayout.pop(1) # Remove the second entry of the PopupLayout list.
+        return framework.Window(Title, layout = PopupLayout, element_justification = "center", debugger_enabled = False, finalize = True) # Return a new window with all of the desired elements and also finalized.
     return Events
 
 def VerifyQEMULocation():
@@ -136,6 +144,8 @@ def ReturnBatchScriptOfConfig(ConfigFile):
                     break # End the loop.
         else:
             ExactHardware = ExactHardware.replace(":-:", ",model=").replace(" - ", " -device ") # Replace a few strings representing the model or device arguments for QEMU.
+            if HardwareUsed == "Memory=": # Check if HardwareUsed depicts memory allocation.
+                if ExactHardware[-2:] in AllByteAllocations: ExactHardware = ExactHardware[0:-1] # Check if the last two characters of ExactHardware is present in AllByteAllocations. If so, remove the last character in ExactHardware to use QEMU's storage allocation unit, otherwise QEMU may error.
             if HardwareUsed in ("hda=", "hdb=", "hdc=", "hdd=", "odd=", "fda=", "fdb="): # Check if the HardwareUsed variable is a drive specification.
                 ExactHardware = '"' + ExactHardware + '"' # Add quotes, just in the case there are directories with spaces in it.
             elif HardwareUsed == "Network=" and not ExactHardware in ("", "None"): # Check if the HardwareUsed variable specifies the network card and the ExactHardware specification is not empty or is specified as None.
@@ -154,21 +164,50 @@ def AutomaticWriteToConfigFilesOfAllMachines(CPUArch, WhatToAppend):
     for MachinesFound in ReturnListingOfDirectory(MachinePath, False): # Skim through the machine path.
         __main__.ConfigurationManager.AppendToConfigurationFile(WhatToAppend, __main__.os.path.normpath(MachinePath + "/" + MachinesFound + "/config.cfg")) # Append the necessary information.
 
-def CreateDiskWizard():
-    "Launch the create virtual disk wizard."
+def CheckDiskSize(DiskSize):
+    """Verify the disk size and see whether it is valid or not.
+    The one necessary argument consists of the exact string to verify, depicting the disk size."""
+    AllQEMUByteAllocations = {"B"} # Specify storage allocation units that QEMU uses.
+    DiskSize = DiskSize.upper() # Make all characters upper-case so case-sensitivity won't be a must.
+    StorageUnit = ""
+
+    # Add the first character of all storage units mentioned in AllByteAllocations.
+    for Unit in AllByteAllocations:
+        AllQEMUByteAllocations.add(Unit[0])
+
+    try:
+        # Cut off byte indicators in DiskSize to prevent issues with int conversion, should the disk size be specified correctly
+        if DiskSize[-2:] not in AllByteAllocations and DiskSize[-1] in AllQEMUByteAllocations: # Check if the last two characters of DiskSize is not present in AllByteAllocations but the last character is present in AllQEMUByteAllocations.
+            StorageUnit = DiskSize[-1]; DiskSize = DiskSize[0:-1]
+        elif DiskSize[-2:] in AllByteAllocations: # Check if the last two characters of DiskSize is present in AllByteAllocations, signifying a unit of storage differentiating from normal bytes.
+            StorageUnit = DiskSize[-2]; DiskSize = DiskSize[0:-2]
+        else: raise ValueError
+
+        # Initiate conversion to see if exception ValueError will be raised, then return DiskSize with QEMU-like storage unit.
+        int(DiskSize)
+        return ["Success", DiskSize + StorageUnit]
+    except ValueError:
+        return ["Error", "Please check that your disk size consists of a number and then a suffix defining whether it should be in bytes, kilobytes, megabytes, gigabytes, terabytes, petabytes or exabytes."]
+
+def CreateDiskWizard(DefaultDiskLocation = ""):
+    """Launch the create virtual disk wizard.
+    The only argument specified, which is optional, will select the default disk location."""
     if __main__.os.path.isfile(__main__.QEMULocation.Get() + "\qemu-img.exe"): # Check if qemu-img.exe exists in QEMU's location.
+        DefaultText = "Current desired location: "
+        if DefaultDiskLocation == "": DefaultText = DefaultText + "none"
+        else: DefaultText = DefaultText + __main__.os.path.normpath(DefaultDiskLocation)
         CVDLayout = [ # Create the layout for the create virtual disk wizard.
                         [framework.Text("Create a new virtual disk", font = ("Segoe UI Light", 20))], # Title of the application
                         [framework.Text("""You can create a virtual disk with the following options listed down below. All supported disk formats will also be listed down below. All disk formats except for raw (.img) support dynamic disks, which are essentially virtual disks that start off as very, very small and eventually take up more space the more that is being written to it. 
                                 
 Keep in mind that raw virtual disks use the .img file format and VPC (Virtual PC) virtual disks use the legacy .vhd file format.
 
-Finally, when creating virtual disks, ensure that you're only using the first letter for the byte unit. For example, 1MB should just be simply 1M, while 5TB should just be 5T. All possible suffixes for drive sizes: B, K, M, G, T, P, E.""", justification = "center", size = (60, 12))], # Description about the create virtual disk wizard.
+Although QEMU uses single-letter units for storage allocation, you may use the true abbreviated units while creating a disk image with PeckerMgr. For example, you may type in 25GB as the disk size. If you still feel comfortable using single-lettered units, feel free to do so. All possible storage allocation units: B, KB, GB, TB, PB, EB.""", justification = "center", size = (60, 14))], # Description about the create virtual disk wizard.
                         [framework.Text("Virtual disk format:")], # Sub-title for the virtual disk format.
                         [framework.Listbox(values = ["Raw", "QCOW", "QCOW2", "VDI", "VMDK", "VPC", "VHDX"], size = (60, 7), key = "DiskFormat", background_color = "#ffffff", text_color = "#060e26")], # All available disk formats to choose from.
                         [framework.Text("Disk size:"), framework.Input(key = "DiskSize", background_color = "#ffffff", text_color = "#060e26")], # Allow the user to choose the respective disk size.
                         [framework.Text("Disk name:"), framework.Input(key = "DiskName", background_color = "#ffffff", text_color = "#060e26")], # Allow the user to choose the name for their disk.
-                        [framework.Text("Current desired location: none", size = (75, 2), key = "DiskLocationText", justification = "center", font = ("Segoe UI", 8))], # Notify the user about the current location of their disk drive.
+                        [framework.Text(DefaultText, size = (75, 2), key = "DiskLocationText", justification = "center", font = ("Segoe UI", 8))], # Notify the user about the current location of their disk drive.
                         [framework.FolderBrowse(button_text = "Browse for location", key = "DiskLocation", enable_events = True)], # Allow the user to choose the location for their virtual disk.
                         [framework.Button("OK", key = "OK"), framework.Button("Cancel", key = "Cancel")] # Finally, create the last few options for the user.
         ]
@@ -180,26 +219,18 @@ Finally, when creating virtual disks, ensure that you're only using the first le
             elif Events2 == "DiskLocation" and UserInput2["DiskLocation"] != "": # Check if the browse button has been selected and if the user input is not empty.
                 CVD["DiskLocationText"].update("Current desired location: " + __main__.os.path.normpath(UserInput2["DiskLocation"])) # Update the current desired location text. This also uses os.path.normpath() because the desired location uses normal slashes for whatever reason.
             elif Events2 == "OK": # Check if the user would like to proceed.
-                if UserInput2["DiskLocation"] == "": # Check if the disk location is empty.
+                if UserInput2["DiskLocation"] == "" and DefaultDiskLocation == "": # Check if the disk location is empty.
                     CreatePopup("Please select a location for your disk.", "Error", 1)
                 elif UserInput2["DiskSize"] == "": # Check if the disk size is empty.
                     CreatePopup("Please choose a size for your disk.", "Error", 1)
                 elif UserInput2["DiskName"] == "": # Check if the disk name is empty.
                     CreatePopup("Please choose a name for your disk.", "Error", 1)
-                elif not __main__.os.path.isdir(UserInput2["DiskLocation"]): # Check if the directory was deleted for some weird reason.
-                    CreatePopup("The current selected directory no longer exists.", "Error", 1)
                 elif UserInput2["DiskFormat"] == []: # Check if the disk format has not been selected.
                     CreatePopup("Please choose a disk format.", "Error", 1)
-                elif not UserInput2["DiskSize"][-1] in ("B", "K", "M", "G", "T") or len(UserInput2["DiskSize"]) == 1: # Check if the length of the DiskSize box is 1 character only or if the final character is not a suffix or if the 2nd last character is not a number.
-                    CreatePopup("Please check that your disk size consists of a number and then a suffix defining whether it should be in bytes, kilobytes, megabytes, gigabytes, terabytes, petabytes or exabytes.", "Error", 4)
                 else:
-                    Allowed = True # See if anything that aren't numbers are in the DiskSize value.
-                    for Char in UserInput2["DiskSize"][0:-1]:
-                        Allowed = False if not Char in ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9") else Allowed # Check if the DiskName value contains anything that isn't considered an Arabic numeral, excluding the suffix.
-                        if Allowed == False:
-                            break # Stop the loop so we don't have to continue looking around.
-                    if not Allowed:
-                        CreatePopup("Please check that your disk size consists of a number and then a suffix defining whether it should be in bytes, kilobytes, megabytes, gigabytes or terabytes.", "Error", 4)
+                    StorageUnit = CheckDiskSize(UserInput2["DiskSize"])
+                    if StorageUnit[0] == "Error": # Check if the first entry of the StorageUnit array is "Error".
+                        CreatePopup(StorageUnit[1], "Error", 3)
                     else:
                         Allowed = True # Reset our Allowed variable, now that we will be looking through the DiskName value.
                         for Char in UserInput2["DiskName"]:
@@ -210,13 +241,22 @@ Finally, when creating virtual disks, ensure that you're only using the first le
                             CreatePopup("""The following characters are forbidden for the disk name: \, /, :, *, ?, ", <, >, |""", "Error", 2)
                         else:
                             # Create a few variables to make this look easier on our eyes.
+                            DiskLocationToUse = UserInput2["DiskLocation"] if UserInput2["DiskLocation"] != "" else DefaultDiskLocation # Specify the final disk location, containing either the contents of UserInput2["DiskLocation"] if it is not an empty string or the contents of DefaultDiskLocation.
                             FileFormat = UserInput2["DiskFormat"][0] == "VPC" and "vhd" or UserInput2["DiskFormat"][0] == "Raw" and "img" or UserInput2["DiskFormat"][0].lower()
-                            FileAndDirectory = '"' + __main__.os.path.normpath(UserInput2["DiskLocation"]) + "\\" + UserInput2["DiskName"] + "." + FileFormat + '"'
-                            if __main__.os.path.isfile(FileAndDirectory):
+                            FileAndDirectory = __main__.os.path.normpath('"' + DiskLocationToUse + "/" + UserInput2["DiskName"] + "." + FileFormat + '"')
+
+                            if __main__.os.path.isfile(FileAndDirectory[1:-1]): # Check if FileAndDirectory with its enclosing quotes removed does not determine any file on the system.
                                 CreatePopup("This file already exists. Please choose another name.", "Error", 2)
+                            elif not __main__.os.path.isdir(DiskLocationToUse): # Check if the directory was deleted for some weird reason.
+                                CreatePopup("The current selected directory no longer exists.", "Error", 1)
                             else: # If we reach this point, we can safely create our drive!
-                                __main__.subprocess.Popen(__main__.QEMULocation.Get() + "\qemu-img.exe create -f " + UserInput2["DiskFormat"][0].lower() + " " + FileAndDirectory + " " + UserInput2["DiskSize"]) # Launch qemu-img with the correct parameters!
+                                __main__.subprocess.Popen(__main__.QEMULocation.Get() + "\qemu-img.exe create -f " + UserInput2["DiskFormat"][0].lower() + " " + FileAndDirectory + " " + StorageUnit[1]) # Launch qemu-img with the correct parameters!
                                 break # End the loop.
         CVD.close() # Close the window just in case it hasn't already.
     else:
         CreatePopup("qemu-img does not exist in your QEMU location.", "Error", 1)
+
+def TellUserToSelectVM():
+    __main__.PeckerMgr.hide() # Hide PeckerMgr to prevent inconsistencies from occurring.
+    CreatePopup("Please select a virtual machine.", "Error", 1) # Create the necessary popup.
+    __main__.PeckerMgr.un_hide() # Show PeckerMgr again.
